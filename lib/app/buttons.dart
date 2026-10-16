@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import '../screens/quizes.dart';
+import '../screens/quizzes.dart';
 
 class Buttons extends StatelessWidget {
   const Buttons({super.key});
@@ -20,7 +20,7 @@ class Buttons extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const Quizes(),
+              builder: (context) => const Quizzes(numeroQuiz: 2,),
             ),
           );
         },

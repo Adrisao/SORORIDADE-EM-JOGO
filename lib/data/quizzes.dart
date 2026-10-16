@@ -51,7 +51,7 @@ Sororidade é uma palavra que vem do latim "soror", que quer dizer irmã. Ela si
     'tipoApresentacao': 'video',
     'duracao': '1 a 2 minutos',
     'conteudo': '''
-O vídeo mostra uma cena do dia a dia da escola: uma menina percebe que a colega está quieta e triste no canto da sala, senta do lado dela e pergunta o que aconteceu. A narração explica, com linguagem simples, que empatia é tentar sentir o que a outra pessoa está sentindo, e que ouvir com atenção já é uma forma de ajudar. No fim, o vídeo faz a pergunta "e você, o que faria?", deixando o gancho para as questões.
+    {Video1.mp4}
 ''',
     'perguntas': [
       {
