@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import '../app/buttons.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,25 +18,8 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Sororidade em Jogo'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Meu aplicativo está funcionando!'),
-            Text(
-              '$counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            counter++;
-          });
-        },
-        child: const Icon(Icons.add),
+      body: const Center(
+        child: Buttons(),
       ),
     );
   }
