@@ -2,20 +2,13 @@
 import 'package:flutter/material.dart';
 
 class Quizes extends StatelessWidget {
-  const Quizes({super.key});
+  // qual quiz sera carregado
+  final int numeroQuiz;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quizes'),
-      ),
-      body: const Center(
-        child: Text(
-          'Escolha um quiz para começar!',
-          style: TextStyle(fontSize: 22),
-        ),
-      ),
-    );
-  }
+  const Quizes({
+    super.key,
+    required this.numeroQuiz,
+  });
+
+  
 }
