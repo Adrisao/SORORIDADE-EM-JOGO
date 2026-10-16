@@ -1,8 +1,14 @@
+
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoWidget extends StatefulWidget {
-  const VideoWidget({super.key});
+  final String nomeVideo;
+
+  const VideoWidget({
+    super.key,
+    required this.nomeVideo,
+  });
 
   @override
   State<VideoWidget> createState() => _VideoWidgetState();
@@ -11,20 +17,40 @@ class VideoWidget extends StatefulWidget {
 class _VideoWidgetState extends State<VideoWidget> {
   late final VideoPlayerController controller;
 
+  bool carregando = true;
+  bool erro = false;
+
   @override
   void initState() {
     super.initState();
+    iniciarVideo();
+  }
 
+  Future<void> iniciarVideo() async {
     controller = VideoPlayerController.asset(
-      'data/videos/Video1.mp4',
+      'assets/videos/${widget.nomeVideo}',
     );
 
-    controller.initialize().then((_) {
+    try {
+      await controller.initialize();
+
       if (!mounted) return;
 
-      setState(() {});
-      controller.play();
-    });
+      setState(() {
+        carregando = false;
+      });
+
+      await controller.play();
+    } catch (e) {
+      debugPrint('Erro ao carregar vídeo: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        carregando = false;
+        erro = true;
+      });
+    }
   }
 
   @override
@@ -35,15 +61,26 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
+    if (carregando) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    return AspectRatio(
-      aspectRatio: controller.value.aspectRatio,
-      child: VideoPlayer(controller),
+    if (erro) {
+      return const Center(
+        child: Text('Não foi possível carregar o vídeo.'),
+      );
+    }
+
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: AspectRatio(
+          aspectRatio: controller.value.aspectRatio,
+          child: VideoPlayer(controller),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+
 import '../data/quizzes.dart';
 import '../widgets/video_player.dart';
 
@@ -32,10 +34,10 @@ class _QuizzesState extends State<Quizzes> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
-        // Fecha a página atual e volta para a anterior
+        // Volta para a página anterior
         Navigator.pop(context);
 
-        // Mostra o popup na tela anterior
+        // Mostra um aviso
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -66,81 +68,82 @@ class _QuizzesState extends State<Quizzes> {
       );
     }
 
-    // Quiz encontrado: monta a página normalmente
-  return Scaffold(
-    appBar: AppBar(
-    title: Text(quiz!['titulo']),
-  ),
-  body: Center(
-  child: SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 600),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Icon(
-            Icons.emoji_events_rounded,
-            size: 100,
-            color: Colors.deepPurple,
-          ),
+    final titulo = quiz!['titulo'].toString();
+    final video = quiz!['video'];
+    final conteudo = quiz!['conteudo'];
 
-          const SizedBox(height: 24),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(titulo),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 100,
+                  color: Colors.deepPurple,
+                ),
 
-          Text(
-            quiz!['titulo'].toString(),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+                const SizedBox(height: 24),
 
-          const SizedBox(height: 16),
+                // Mostra o vídeo se houver um
+                if (video != null) ...[
+                  VideoWidget(
+                    key: ValueKey(video),
+                    nomeVideo: video as String,
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Text(
-                    'Sua missão',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                // Mostra o texto se houver conteúdo
+                if (conteudo != null) ...[
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Sua missão',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            conteudo as String,
+                            textAlign: TextAlign.justify,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  Text(
-                    quiz!['conteudo'].toString(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  const SizedBox(height: 24),
                 ],
-              ),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Depois vamos iniciar o quiz aqui.
+                  },
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Começar missão'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(18),
+                  ),
+                ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          ElevatedButton.icon(
-            onPressed: () {
-              // Depois vamos iniciar o quiz aqui.
-            },
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('Começar missão'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(18),
-            ),
-          ),
-        ],
+        ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
 }
