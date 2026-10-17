@@ -7,6 +7,7 @@ import '../app/pallet.dart';
 import '../app/progresso.dart';
 import '../data/quizzes.dart';
 import '../widgets/comum.dart';
+import 'perfil.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,8 +19,42 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final progresso = Progresso.instancia;
 
+  // Aba selecionada na barra de baixo: 0 = Trilha, 1 = Perfil
+  int aba = 0;
+
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      // IndexedStack mantém a posição da rolagem ao trocar de aba
+      body: IndexedStack(
+        index: aba,
+        children: [
+          _trilha(),
+          const Perfil(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: aba,
+        onDestinationSelected: (i) => setState(() => aba = i),
+        backgroundColor: Pallet.branco,
+        indicatorColor: Pallet.lavanda,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.route_outlined, color: Pallet.roxoLogo),
+            selectedIcon: Icon(Icons.route_rounded, color: Pallet.rosaMagenta),
+            label: 'Trilha',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_circle_outlined, color: Pallet.roxoLogo),
+            selectedIcon: Icon(Icons.account_circle_rounded, color: Pallet.rosaMagenta),
+            label: 'Perfil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trilha() {
     // Redesenha a trilha sempre que o progresso muda
     return ListenableBuilder(
       listenable: progresso,
