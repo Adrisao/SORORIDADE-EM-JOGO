@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../app/pallet.dart';
 
 class VideoWidget extends StatefulWidget {
   final String nomeVideo;
@@ -68,17 +69,74 @@ class _VideoWidgetState extends State<VideoWidget> {
     }
 
     if (erro) {
-      return const Center(
-        child: Text('Não foi possível carregar o vídeo.'),
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Pallet.lavanda,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.videocam_off_rounded, size: 48, color: Pallet.roxoLogo),
+            SizedBox(height: 8),
+            Text(
+              'Não foi possível carregar o vídeo.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Pallet.roxoAmeixa,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return Center(
+    // Toque no vídeo para pausar / continuar
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          controller.value.isPlaying ? controller.pause() : controller.play();
+        });
+      },
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: AspectRatio(
           aspectRatio: controller.value.aspectRatio,
-          child: VideoPlayer(controller),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(controller),
+              if (!controller.value.isPlaying)
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Pallet.rosaMagenta.withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 48,
+                    color: Pallet.branco,
+                  ),
+                ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: VideoProgressIndicator(
+                  controller,
+                  allowScrubbing: true,
+                  colors: const VideoProgressColors(
+                    playedColor: Pallet.rosaMagenta,
+                    bufferedColor: Pallet.lavanda,
+                    backgroundColor: Pallet.roxoLogo,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
