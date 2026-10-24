@@ -5,7 +5,7 @@ import '../app/pallet.dart';
 import '../app/progresso.dart';
 
 // Tela de perfil da aluna.
-// Apenas front: nome, turma, sequência e medalhas são dados de exemplo.
+
 class Perfil extends StatelessWidget {
   const Perfil({super.key});
 
