@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import '../app/pallet.dart';
 import '../app/progresso.dart';
@@ -25,6 +26,8 @@ class _PerguntasState extends State<Perguntas> {
   int acertos = 0;
   bool terminou = false;
 
+  final AudioPlayer player = AudioPlayer();
+
   List<Map<String, dynamic>> get perguntas =>
       (widget.quiz['perguntas'] as List).cast<Map<String, dynamic>>();
 
@@ -32,11 +35,17 @@ class _PerguntasState extends State<Perguntas> {
 
   bool get acertou => escolhida == pergunta['respostaCorreta'];
 
-  void verificar() {
+  Future<void> verificar() async {
     setState(() {
       verificada = true;
       if (acertou) acertos++;
     });
+
+    if (acertou) {
+      await player.play(AssetSource('sounds/correct.mp3'),);
+    }else {
+      await player.play(AssetSource('sounds/wrong.mp3'),);
+    }
   }
 
   void continuar() {
@@ -254,6 +263,7 @@ class _PerguntasState extends State<Perguntas> {
           ),
           if (!acertou) ...[
             const SizedBox(height: 6),
+            
             Text(
               'Resposta certa: $correta',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
