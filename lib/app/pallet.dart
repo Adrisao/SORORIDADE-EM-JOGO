@@ -18,6 +18,7 @@ class Pallet {
   static const Color roxoLogo = Color(0xFF8E5CA6); // círculo do logo
   static const Color textoEscuro = Color(0xFF3A2E39); // textos em geral
   static const Color branco = Color(0xFFFFFFFF); // texto sobre rosa/roxo, cartões
+  static const Color preto = Color(0xFF000000); // fundo do vídeo em tela cheia
 
   // Fonte usada em todo o app
   static const String fonte = 'Quicksand';

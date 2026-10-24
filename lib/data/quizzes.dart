@@ -52,7 +52,7 @@ Sororidade é uma palavra que vem do latim "soror", que quer dizer irmã. Ela si
     'tipoApresentacao': 'video',
     'duracao': '1 a 2 minutos',
     'conteudo': null,
-    'video': 'Video2.mp4',
+    'video': 'Sororidade_Video1_Licao1.mp4',
     'perguntas': [
       {
         'enunciado': 'O que significa ter empatia?',
@@ -187,7 +187,7 @@ Jogo no formato do Duolingo sobre o tema "apoiar em vez de competir". A aluna ar
     'conteudo': '''
 O vídeo mostra duas colegas que querem usar o mesmo material ao mesmo tempo e começam a discutir. Em vez de brigar, elas param, conversam e combinam de dividir o uso. A narração mostra o passo a passo: primeiro ouvir os dois lados, depois procurar uma solução em que as duas ganham. O vídeo reforça que conflito é normal e que o diálogo resolve melhor do que o grito.
 ''',
-    'video': null,
+    'video': 'Sororidade_Video2_Licao2.mp4',
     'perguntas': [
       {
         'enunciado': 'O que podemos fazer quando acontece um conflito?',
@@ -279,7 +279,7 @@ Antes de fazer alguma coisa, vale a pena parar e pensar no que vai acontecer dep
     'conteudo': '''
 Jogo final que junta tudo o que foi visto na trilha. A aluna conduz uma personagem que precisa ajudar as colegas para chegar ao fim do caminho, escolhendo a cada etapa a atitude certa (respeito, empatia, cooperação). A cada fase ela ganha pontos e conquista uma medalha ao terminar. É a revisão de tudo em forma de jogo, antes das últimas questões.
 ''',
-    'video': null,
+    'video': 'Sororidade_Video3_Licao5.mp4',
     'perguntas': [
       {
         'enunciado':
