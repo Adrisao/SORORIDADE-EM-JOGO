@@ -25,20 +25,37 @@ class _PerguntasState extends State<Perguntas> {
   bool verificada = false; // já apertou "Verificar"?
   int acertos = 0;
   bool terminou = false;
+  List<int> erradas = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    fila = List.generate(perguntas.length, (i) => i);
+}
+
+  // experimental
+  late List<int> fila;
 
   final AudioPlayer player = AudioPlayer();
 
   List<Map<String, dynamic>> get perguntas =>
       (widget.quiz['perguntas'] as List).cast<Map<String, dynamic>>();
 
-  Map<String, dynamic> get pergunta => perguntas[atual];
+  Map<String, dynamic> get pergunta => perguntas[fila[atual]];
 
   bool get acertou => escolhida == pergunta['respostaCorreta'];
 
   Future<void> verificar() async {
     setState(() {
       verificada = true;
-      if (acertou) acertos++;
+      if (acertou){
+        acertos++;
+        }else {
+          if (!erradas.contains(atual)) {
+            fila.add(fila[atual]);
+          }
+        }
     });
 
     if (acertou) {
@@ -46,20 +63,26 @@ class _PerguntasState extends State<Perguntas> {
     }else {
       await player.play(AssetSource('sounds/wrong.mp3'),);
     }
+    print('Lista das perguntas: $fila');
   }
 
+ 
   void continuar() {
     setState(() {
-      if (atual + 1 < perguntas.length) {
+      if (atual + 1 < fila.length) {
         atual++;
         escolhida = null;
         verificada = false;
       } else {
         terminou = true;
-        Progresso.instancia.concluir(widget.quiz['numero'] as int, acertos);
+        Progresso.instancia.concluir(
+          widget.quiz['numero'] as int,
+          acertos,
+        );
       }
     });
   }
+
 
   void recomecar() {
     setState(() {
