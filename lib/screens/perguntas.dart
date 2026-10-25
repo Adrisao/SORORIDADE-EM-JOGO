@@ -24,20 +24,34 @@ class _PerguntasState extends State<Perguntas> {
   int? escolhida; // alternativa que a aluna tocou
   bool verificada = false; // já apertou "Verificar"?
   int acertos = 0;
+  int erros = 0;
   bool terminou = false;
-  List<int> erradas = [];
+  late List<int> fila;
+  late List<int> ordemAlternativas;
+  final Set<int> perguntasAcertadas = {};
+  final AudioPlayer player = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
-
     fila = List.generate(perguntas.length, (i) => i);
-}
+    ordemAlternativas = _novaOrdemAlternativas();
+  }
 
-  // experimental
-  late List<int> fila;
+  List<int> _novaOrdemAlternativas() {
+    final ordem = List.generate(
+      (pergunta['alternativas'] as List).length,
+      (i) => i,
+    );
+    ordem.shuffle();
+    return ordem;
+  }
 
-  final AudioPlayer player = AudioPlayer();
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
+  }
 
   List<Map<String, dynamic>> get perguntas =>
       (widget.quiz['perguntas'] as List).cast<Map<String, dynamic>>();
@@ -47,23 +61,32 @@ class _PerguntasState extends State<Perguntas> {
   bool get acertou => escolhida == pergunta['respostaCorreta'];
 
   Future<void> verificar() async {
+    if (verificada || escolhida == null) return;
+
+    final indicePergunta = fila[atual];
+    final respostaCorreta = acertou;
+
     setState(() {
       verificada = true;
-      if (acertou){
-        acertos++;
-        }else {
-          if (!erradas.contains(atual)) {
-            fila.add(fila[atual]);
-          }
+
+      if (respostaCorreta) {
+        // Cada pergunta vale apenas um acerto, mesmo que tenha sido repetida.
+        if (perguntasAcertadas.add(indicePergunta)) {
+          acertos++;
         }
+      } else {
+        erros++;
+        // Evita colocar a mesma pergunta várias vezes na fila ao mesmo tempo.
+        final jaEstaNaFila = fila.skip(atual + 1).contains(indicePergunta);
+        if (!jaEstaNaFila) {
+          fila.add(indicePergunta);
+        }
+      }
     });
 
-    if (acertou) {
-      await player.play(AssetSource('sounds/correct.mp3'),);
-    }else {
-      await player.play(AssetSource('sounds/wrong.mp3'),);
-    }
-    print('Lista das perguntas: $fila');
+    await player.play(
+      AssetSource(respostaCorreta ? 'sounds/correct.mp3' : 'sounds/wrong.mp3'),
+    );
   }
 
  
@@ -73,13 +96,16 @@ class _PerguntasState extends State<Perguntas> {
         atual++;
         escolhida = null;
         verificada = false;
-      } else {
-        terminou = true;
-        Progresso.instancia.concluir(
-          widget.quiz['numero'] as int,
-          acertos,
-        );
+        ordemAlternativas = _novaOrdemAlternativas();
+        return;
       }
+
+      terminou = true;
+      final estrelas = erros == 0 ? 3 : (erros <= 2 ? 2 : 1);
+      Progresso.instancia.concluir(
+        widget.quiz['numero'] as int,
+        estrelas,
+      );
     });
   }
 
@@ -90,7 +116,11 @@ class _PerguntasState extends State<Perguntas> {
       escolhida = null;
       verificada = false;
       acertos = 0;
+      erros = 0;
       terminou = false;
+      perguntasAcertadas.clear();
+      fila = List.generate(perguntas.length, (i) => i);
+      ordemAlternativas = _novaOrdemAlternativas();
     });
   }
 
@@ -99,7 +129,7 @@ class _PerguntasState extends State<Perguntas> {
     if (terminou) return _resultado();
 
     // Barra avança conforme a aluna responde
-    final avanco = (atual + (verificada ? 1 : 0)) / perguntas.length;
+    final avanco = perguntas.isEmpty ? 0.0 : acertos / perguntas.length;
     final alternativas = (pergunta['alternativas'] as List).cast<String>();
 
     return Scaffold(
@@ -140,7 +170,7 @@ class _PerguntasState extends State<Perguntas> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Pilula(
-                      texto: 'PERGUNTA ${atual + 1} DE ${perguntas.length}',
+                      texto: 'PERGUNTA $acertos DE ${perguntas.length}',
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -153,8 +183,8 @@ class _PerguntasState extends State<Perguntas> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    for (var i = 0; i < alternativas.length; i++) ...[
-                      _alternativa(i, alternativas[i]),
+                    for (final indiceOriginal in ordemAlternativas) ...[
+                      _alternativa(indiceOriginal, alternativas[indiceOriginal]),
                       const SizedBox(height: 12),
                     ],
                   ],
@@ -310,13 +340,15 @@ class _PerguntasState extends State<Perguntas> {
 
   Widget _resultado() {
     final total = perguntas.length;
+    final estrelas = erros == 0 ? 3 : (erros <= 2 ? 2 : 1);
+    final tentativas = total + erros;
     final String mensagem;
-    if (acertos == total) {
-      mensagem = 'Incrível! Você acertou tudo!';
-    } else if (acertos > 0) {
-      mensagem = 'Bom trabalho! Continue praticando.';
+    if (erros == 0) {
+      mensagem = 'Perfeito! Você concluiu sem errar.';
+    } else if (erros <= 2) {
+      mensagem = 'Muito bem! Você concluiu com poucas tentativas extras.';
     } else {
-      mensagem = 'Não desanime! Que tal tentar de novo?';
+      mensagem = 'Missão concluída! Continue praticando.';
     }
 
     return Scaffold(
@@ -362,10 +394,10 @@ class _PerguntasState extends State<Perguntas> {
                   color: Pallet.branco,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Estrelas(quantidade: acertos, tamanho: 44),
+                child: Estrelas(quantidade: estrelas, tamanho: 44),
               ),
               const SizedBox(height: 16),
-              Pilula(texto: '$acertos DE $total ACERTOS'),
+              Pilula(texto: '$tentativas TENTATIVAS'),
               const SizedBox(height: 16),
               Text(
                 mensagem,
