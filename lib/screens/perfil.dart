@@ -54,8 +54,12 @@ class Perfil extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _estatistica(Icons.local_fire_department_rounded, '3',
-                        'Dias seguidos', Pallet.rosaMagenta),
+                    _estatistica(
+  Icons.local_fire_department_rounded,
+  '${progresso.diasSeguidos}',
+  'Dias seguidos',
+  Pallet.rosaMagenta,
+),
                     const SizedBox(width: 12),
                     _estatistica(Icons.military_tech_rounded, '$medalhas',
                         'Medalhas', Pallet.roxoLogo),
