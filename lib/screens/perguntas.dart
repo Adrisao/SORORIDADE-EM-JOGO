@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../database/database_helper.dart';
 import '../app/pallet.dart';
 import '../app/progresso.dart';
 import '../widgets/comum.dart';
@@ -90,24 +91,46 @@ class _PerguntasState extends State<Perguntas> {
   }
 
  
-  void continuar() {
-    setState(() {
-      if (atual + 1 < fila.length) {
-        atual++;
-        escolhida = null;
-        verificada = false;
-        ordemAlternativas = _novaOrdemAlternativas();
-        return;
-      }
 
-      terminou = true;
-      final estrelas = erros == 0 ? 3 : (erros <= 2 ? 2 : 1);
-      Progresso.instancia.concluir(
-        widget.quiz['numero'] as int,
-        estrelas,
-      );
+Future<void> continuar() async {
+  // Ainda existem perguntas na fila.
+  if (atual + 1 < fila.length) {
+    setState(() {
+      atual++;
+      escolhida = null;
+      verificada = false;
+      ordemAlternativas = _novaOrdemAlternativas();
     });
+
+    return;
   }
+
+  // A lição terminou: calcula a pontuação.
+  final numeroLicao = widget.quiz['numero'] as int;
+
+  final estrelas = erros == 0
+      ? 3
+      : (erros <= 2 ? 2 : 1);
+
+  // Salva a tentativa no SQLite antes de exibir o resultado.
+  await DatabaseHelper.instancia.salvarTentativa(
+    lessonId: numeroLicao,
+    erros: erros,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    terminou = true;
+  });
+
+  // Atualiza o progresso que as telas já utilizam.
+  Progresso.instancia.concluir(
+    numeroLicao,
+    estrelas,
+  );
+}
+
 
 
   void recomecar() {
