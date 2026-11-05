@@ -28,12 +28,29 @@ class Progresso extends ChangeNotifier {
   bool liberada(int numero) =>
       numero == 1 || concluida(numero - 1);
 
-  // Carrega o progresso salvo no SQLite.
-  Future<void> carregar() async {
-    if (_carregado) return;
+  // Apaga o progresso da memória (quando a aluna sai da conta),
+  // para a próxima aluna do mesmo aparelho não ver o progresso dela.
+  void limpar() {
+    _estrelas.clear();
+    _diasEstudados.clear();
+    _carregado = false;
+    notifyListeners();
+  }
 
-    final tentativas =
-        await DatabaseHelper.instancia.buscarTentativas();
+  // Carrega o progresso da aluna logada, salvo no Firebase.
+  // Se não der (ex.: sem internet), o app segue com o progresso zerado.
+  Future<void> carregar() async {
+    limpar();
+
+    final List<Map<String, dynamic>> tentativas;
+    try {
+      tentativas = await DatabaseHelper.instancia
+          .buscarTentativas()
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      debugPrint('Não foi possível carregar o progresso do Firebase: $e');
+      return;
+    }
 
     _estrelas.clear();
     _diasEstudados.clear();

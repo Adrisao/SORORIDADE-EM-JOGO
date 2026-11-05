@@ -1,6 +1,8 @@
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../app/autenticacao.dart';
 import '../app/pallet.dart';
 import '../app/progresso.dart';
 
@@ -80,6 +82,30 @@ class Perfil extends StatelessWidget {
     );
   }
 
+  // Pergunta antes de sair, para não sair sem querer.
+  Future<void> _sair(BuildContext context) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sair da conta?'),
+        content: const Text('Seu progresso fica salvo. É só entrar de novo para continuar.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+    if (confirmou != true) return;
+    await Autenticacao.instancia.sair();
+    Progresso.instancia.limpar();
+  }
+
   // Aviso para o que ainda não foi implementado
   void _emBreve(BuildContext context) {
     ScaffoldMessenger.of(context)
@@ -125,18 +151,37 @@ class Perfil extends StatelessWidget {
             child: const Icon(Icons.face_3_rounded, size: 56, color: Pallet.branco),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Aluna',
-            style: TextStyle(
-              color: Pallet.branco,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '5º ano A',
-            style: TextStyle(color: Pallet.lavanda, fontSize: 15),
+          // Nome e e-mail da conta logada (atualiza se o nome mudar).
+          StreamBuilder<User?>(
+            stream: Autenticacao.instancia.disponivel
+                ? FirebaseAuth.instance.userChanges()
+                : const Stream.empty(),
+            initialData: Autenticacao.instancia.usuario,
+            builder: (context, snapshot) {
+              final usuario = snapshot.data;
+              final nome = usuario?.displayName;
+              return Column(
+                children: [
+                  Text(
+                    (nome == null || nome.isEmpty) ? 'Aluna' : nome,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Pallet.branco,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (usuario?.email != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      usuario!.email!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Pallet.lavanda, fontSize: 15),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
           const SizedBox(height: 14),
           OutlinedButton.icon(
@@ -246,7 +291,10 @@ class Perfil extends StatelessWidget {
           const Divider(height: 1, color: Pallet.lavanda),
           _opcao(Icons.info_rounded, 'Sobre o projeto', () => _emBreve(context)),
           const Divider(height: 1, color: Pallet.lavanda),
-          _opcao(Icons.logout_rounded, 'Sair', () => _emBreve(context)),
+          if (Autenticacao.instancia.disponivel)
+            _opcao(Icons.logout_rounded, 'Sair', () => _sair(context))
+          else
+            _opcao(Icons.logout_rounded, 'Sair', () => _emBreve(context)),
         ],
       ),
     );

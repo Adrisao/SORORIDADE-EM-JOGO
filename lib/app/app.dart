@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import '../screens/home_page.dart';
+import '../screens/entrada.dart';
 import 'pallet.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Sororidade em Jogo',
       theme: tema(),
-      home: const HomePage(),
+      home: const Entrada(),
     );
   }
 }
