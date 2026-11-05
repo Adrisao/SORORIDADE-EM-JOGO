@@ -112,11 +112,14 @@ Future<void> continuar() async {
       ? 3
       : (erros <= 2 ? 2 : 1);
 
-  // Salva a tentativa no SQLite antes de exibir o resultado.
-  await DatabaseHelper.instancia.salvarTentativa(
-    lessonId: numeroLicao,
-    erros: erros,
-  );
+  // Salva a tentativa no Firebase em segundo plano.
+  // Não espera a resposta: sem internet o Firestore guarda no aparelho
+  // e envia depois, e a aluna vê o resultado na hora.
+  DatabaseHelper.instancia
+      .salvarTentativa(lessonId: numeroLicao, erros: erros)
+      .catchError((Object e) {
+    debugPrint('Não foi possível salvar a tentativa no Firebase: $e');
+  });
 
   if (!mounted) return;
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "517977069264",
+    "project_id": "empoderadigital-1b763",
+    "storage_bucket": "empoderadigital-1b763.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517977069264:android:e60bcd67741b9f94adb0d5",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfCCk85eYPSO9DMjBm0iPzc_fhmfyGHQs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore do Sororidade em Jogo.
+// Publicar no Firebase: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cada aluna só acessa a própria pasta: alunas/{uid}/...
+    match /alunas/{uid}/tentativas/{tentativa} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Só pode criar (nunca editar ou apagar) e com os campos certos.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lesson_id', 'erros', 'data', 'criadoEm'])
+        && request.resource.data.lesson_id is int
+        && request.resource.data.lesson_id >= 1
+        && request.resource.data.lesson_id <= 1000
+        && request.resource.data.erros is int
+        && request.resource.data.erros >= 0
+        && request.resource.data.erros <= 1000
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 40
+        && request.resource.data.criadoEm == request.time;
+    }
+
+    // Qualquer outro caminho fica bloqueado.
+    match /{caminho=**} {
+      allow read, write: if false;
+    }
+  }
+}

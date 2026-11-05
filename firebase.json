@@ -1,0 +1,25 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "empoderadigital-1b763",
+          "appId": "1:517977069264:android:e60bcd67741b9f94adb0d5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "empoderadigital-1b763",
+          "configurations": {
+            "android": "1:517977069264:android:e60bcd67741b9f94adb0d5",
+            "web": "1:517977069264:web:43eeacc7120cc6b4adb0d5"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

@@ -1,67 +1,48 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-
+// Guarda as tentativas das lições no Firestore (Firebase).
+//
+// Estrutura no banco (cada aluna só acessa a própria pasta):
+//   alunas/{uid}/tentativas/{id automático}
+//     lesson_id: número da lição
+//     erros:     quantos erros a aluna cometeu
+//     data:      data/hora no aparelho da aluna (texto ISO 8601)
+//     criadoEm:  data/hora do servidor do Firebase
 class DatabaseHelper {
   static final DatabaseHelper instancia = DatabaseHelper._();
 
   DatabaseHelper._();
 
-  Database? _database;
-
-  Future<Database> get database async {
-    if (_database != null) {
-      return _database!;
+  CollectionReference<Map<String, dynamic>> get _tentativas {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      throw StateError('Nenhuma aluna logada no Firebase.');
     }
-
-    _database = await _inicializarBanco();
-    return _database!;
-  }
-
-  Future<Database> _inicializarBanco() async {
-    final diretorio = await getDatabasesPath();
-    final caminho = join(diretorio, 'aprendizado.db');
-
-    return await openDatabase(
-      caminho,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE attempts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lesson_id INTEGER NOT NULL,
-            erros INTEGER NOT NULL,
-            data TEXT NOT NULL
-          )
-        ''');
-      },
-    );
+    return FirebaseFirestore.instance
+        .collection('alunas')
+        .doc(uid)
+        .collection('tentativas');
   }
 
   // Salva uma tentativa assim que a lição é concluída.
+  // Sem internet, o Firestore guarda no aparelho e envia quando voltar.
   Future<void> salvarTentativa({
     required int lessonId,
     required int erros,
   }) async {
-    final db = await database;
-
-    await db.insert(
-      'attempts',
-      {
-        'lesson_id': lessonId,
-        'erros': erros,
-        'data': DateTime.now().toIso8601String(),
-      },
-    );
+    await _tentativas.add({
+      'lesson_id': lessonId,
+      'erros': erros,
+      'data': DateTime.now().toIso8601String(),
+      'criadoEm': FieldValue.serverTimestamp(),
+    });
   }
 
-  // Recupera todas as tentativas salvas.
+  // Recupera todas as tentativas da aluna, da mais antiga para a mais nova.
   Future<List<Map<String, dynamic>>> buscarTentativas() async {
-    final db = await database;
+    final resultado = await _tentativas.orderBy('data').get();
 
-    return await db.query(
-      'attempts',
-      orderBy: 'data ASC',
-    );
+    return [for (final doc in resultado.docs) doc.data()];
   }
 }
