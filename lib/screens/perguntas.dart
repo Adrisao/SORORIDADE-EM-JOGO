@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 
 import '../database/database_helper.dart';
 import '../app/pallet.dart';
+import '../app/perfil_aluna.dart';
 import '../app/progresso.dart';
 import '../widgets/comum.dart';
 
@@ -27,6 +28,7 @@ class _PerguntasState extends State<Perguntas> {
   int acertos = 0;
   int erros = 0;
   bool terminou = false;
+  int gemasGanhas = 0;
   late List<int> fila;
   late List<int> ordemAlternativas;
   final Set<int> perguntasAcertadas = {};
@@ -85,6 +87,7 @@ class _PerguntasState extends State<Perguntas> {
       }
     });
 
+    if (!PerfilAluna.instancia.som) return;
     await player.play(
       AssetSource(respostaCorreta ? 'sounds/correct.mp3' : 'sounds/wrong.mp3'),
     );
@@ -123,15 +126,16 @@ Future<void> continuar() async {
 
   if (!mounted) return;
 
-  setState(() {
-    terminou = true;
-  });
-
   // Atualiza o progresso que as telas já utilizam.
-  Progresso.instancia.concluir(
+  final gemas = Progresso.instancia.concluir(
     numeroLicao,
     estrelas,
   );
+
+  setState(() {
+    terminou = true;
+    gemasGanhas = gemas;
+  });
 }
 
 
@@ -423,7 +427,20 @@ Future<void> continuar() async {
                 child: Estrelas(quantidade: estrelas, tamanho: 44),
               ),
               const SizedBox(height: 16),
-              Pilula(texto: '$tentativas TENTATIVAS'),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  Pilula(texto: '$tentativas TENTATIVAS'),
+                  Pilula(
+                    texto: '+$gemasGanhas GEMAS',
+                    icone: Icons.diamond_rounded,
+                    fundo: Pallet.branco,
+                    cor: Pallet.gema,
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               Text(
                 mensagem,

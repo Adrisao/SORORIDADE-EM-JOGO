@@ -24,6 +24,30 @@ service cloud.firestore {
         && request.resource.data.criadoEm == request.time;
     }
 
+    // Perfil da aluna: avatar, roupinhas compradas, gemas gastas e configurações.
+    match /alunas/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['avatar', 'roupa', 'acessorio', 'compradas', 'gemasGastas', 'som'])
+        && request.resource.data.avatar is string
+        && request.resource.data.avatar.size() <= 40
+        && request.resource.data.roupa is string
+        && request.resource.data.roupa.size() <= 40
+        && (request.resource.data.acessorio == null
+            || (request.resource.data.acessorio is string
+                && request.resource.data.acessorio.size() <= 40))
+        && request.resource.data.compradas is list
+        && request.resource.data.compradas.size() <= 100
+        && request.resource.data.gemasGastas is int
+        && request.resource.data.gemasGastas >= 0
+        // Gemas gastas nunca diminuem (não dá para "devolver" e ganhar de novo).
+        && (resource == null || request.resource.data.gemasGastas >= resource.data.gemasGastas)
+        && request.resource.data.som is bool;
+    }
+
     // Qualquer outro caminho fica bloqueado.
     match /{caminho=**} {
       allow read, write: if false;

@@ -1,16 +1,13 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+
 import '../app/pallet.dart';
 
 class VideoWidget extends StatefulWidget {
   final String nomeVideo;
 
-  const VideoWidget({
-    super.key,
-    required this.nomeVideo,
-  });
+  const VideoWidget({super.key, required this.nomeVideo});
 
   @override
   State<VideoWidget> createState() => _VideoWidgetState();
@@ -21,6 +18,11 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   bool carregando = true;
   bool erro = false;
+
+  // Enquanto a tela cheia está aberta, a lição não desenha o vídeo.
+  // No navegador o vídeo é um elemento só e não pode aparecer em dois
+  // lugares ao mesmo tempo: se aparecer, ele trava ou some.
+  bool emTelaCheia = false;
 
   @override
   void initState() {
@@ -63,18 +65,26 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   // Abre o mesmo vídeo numa tela preta ocupando tudo
   Future<void> abrirTelaCheia() async {
+    final tocando = controller.value.isPlaying;
+    setState(() => emTelaCheia = true);
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _TelaCheiaVideo(controller: controller),
+        builder: (_) =>
+            _TelaCheiaVideo(controller: controller, tocando: tocando),
       ),
     );
+    if (!mounted) return;
+    final tocandoAoVoltar = controller.value.isPlaying;
+    setState(() => emTelaCheia = false);
+    _continuarTocando(controller, tocandoAoVoltar);
   }
 
   @override
   Widget build(BuildContext context) {
     if (carregando) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return const SizedBox(
+        height: 240,
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -102,25 +112,64 @@ class _VideoWidgetState extends State<VideoWidget> {
       );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: AspectRatio(
-        aspectRatio: controller.value.aspectRatio,
-        child: _PlayerComControles(
-          controller: controller,
-          telaCheia: false,
-          onTelaCheia: abrirTelaCheia,
-        ),
+    // Vídeo em pé (de celular) ficaria enorme se ocupasse a largura toda:
+    // limita a altura a 65% da tela e centraliza.
+    final proporcao = controller.value.aspectRatio;
+    final alturaMaxima = MediaQuery.sizeOf(context).height * 0.65;
+
+    return LayoutBuilder(
+      builder: (context, limites) {
+        var largura = limites.maxWidth;
+        if (largura / proporcao > alturaMaxima) {
+          largura = alturaMaxima * proporcao;
+        }
+        return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              width: largura,
+              height: largura / proporcao,
+              child: emTelaCheia
+                  ? _avisoTelaCheia()
+                  : _PlayerComControles(
+                      controller: controller,
+                      telaCheia: false,
+                      onTelaCheia: abrirTelaCheia,
+                    ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _avisoTelaCheia() {
+    return const ColoredBox(
+      color: Pallet.preto,
+      child: Center(
+        child: Icon(Icons.fullscreen_rounded, size: 56, color: Pallet.lavanda),
       ),
     );
   }
 }
 
+// Ao trocar o vídeo de lugar, o navegador pode pausá-lo sozinho.
+// Espera a animação da troca de tela e volta a tocar se estava tocando.
+void _continuarTocando(VideoPlayerController controller, bool tocando) {
+  if (!tocando) return;
+  Future.delayed(const Duration(milliseconds: 450), () {
+    if (controller.value.isInitialized && !controller.value.isPlaying) {
+      controller.play();
+    }
+  });
+}
+
 // Tela cheia: usa o mesmo controller, então o vídeo continua de onde estava
 class _TelaCheiaVideo extends StatefulWidget {
   final VideoPlayerController controller;
+  final bool tocando;
 
-  const _TelaCheiaVideo({required this.controller});
+  const _TelaCheiaVideo({required this.controller, required this.tocando});
 
   @override
   State<_TelaCheiaVideo> createState() => _TelaCheiaVideoState();
@@ -130,12 +179,16 @@ class _TelaCheiaVideoState extends State<_TelaCheiaVideo> {
   @override
   void initState() {
     super.initState();
-    // No celular: esconde as barras do sistema e deita a tela
+    // No celular: esconde as barras do sistema.
+    // Vídeo deitado deita a tela; vídeo em pé mantém o celular em pé.
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    final emPe = widget.controller.value.aspectRatio < 1;
+    SystemChrome.setPreferredOrientations(
+      emPe
+          ? [DeviceOrientation.portraitUp]
+          : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+    );
+    _continuarTocando(widget.controller, widget.tocando);
   }
 
   @override
@@ -221,9 +274,23 @@ class _PlayerComControles extends StatelessWidget {
     );
   }
 
+  // 75 segundos -> "1:15"
+  String _tempo(Duration d) =>
+      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
   Widget _barraDeControles(VideoPlayerValue valor) {
     final mudo = valor.volume == 0;
 
+    return LayoutBuilder(
+      builder: (context, limites) {
+        // Em vídeo estreito (em pé) não cabe a barrinha de volume.
+        final cabeVolume = limites.maxWidth >= 380;
+        return _controles(valor, mudo, cabeVolume);
+      },
+    );
+  }
+
+  Widget _controles(VideoPlayerValue valor, bool mudo, bool cabeVolume) {
     return Container(
       color: Pallet.roxoAmeixa.withValues(alpha: 0.75),
       child: Column(
@@ -244,7 +311,9 @@ class _PlayerComControles extends StatelessWidget {
                 tooltip: valor.isPlaying ? 'Pausar' : 'Continuar',
                 color: Pallet.branco,
                 icon: Icon(
-                  valor.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  valor.isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
                 ),
                 onPressed: alternarPlay,
               ),
@@ -258,21 +327,30 @@ class _PlayerComControles extends StatelessWidget {
                 ),
                 onPressed: () => controller.setVolume(mudo ? 1 : 0),
               ),
-              SizedBox(
-                width: 110,
-                child: SliderTheme(
-                  data: const SliderThemeData(
-                    activeTrackColor: Pallet.rosaMagenta,
-                    inactiveTrackColor: Pallet.lavanda,
-                    thumbColor: Pallet.branco,
-                    trackHeight: 3,
-                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
-                    overlayShape: RoundSliderOverlayShape(overlayRadius: 14),
+              if (cabeVolume)
+                SizedBox(
+                  width: 110,
+                  child: SliderTheme(
+                    data: const SliderThemeData(
+                      activeTrackColor: Pallet.rosaMagenta,
+                      inactiveTrackColor: Pallet.lavanda,
+                      thumbColor: Pallet.branco,
+                      trackHeight: 3,
+                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
+                      overlayShape: RoundSliderOverlayShape(overlayRadius: 14),
+                    ),
+                    child: Slider(
+                      value: valor.volume,
+                      onChanged: controller.setVolume,
+                    ),
                   ),
-                  child: Slider(
-                    value: valor.volume,
-                    onChanged: controller.setVolume,
-                  ),
+                ),
+              Text(
+                '${_tempo(valor.position)} / ${_tempo(valor.duration)}',
+                style: const TextStyle(
+                  color: Pallet.branco,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
@@ -280,7 +358,9 @@ class _PlayerComControles extends StatelessWidget {
                 tooltip: telaCheia ? 'Sair da tela cheia' : 'Tela cheia',
                 color: Pallet.branco,
                 icon: Icon(
-                  telaCheia ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                  telaCheia
+                      ? Icons.fullscreen_exit_rounded
+                      : Icons.fullscreen_rounded,
                 ),
                 onPressed: onTelaCheia,
               ),

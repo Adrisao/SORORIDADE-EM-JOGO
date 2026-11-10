@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app/buttons.dart';
 import '../app/pallet.dart';
+import '../app/perfil_aluna.dart';
 import '../app/progresso.dart';
 import '../data/quizzes.dart';
+import '../widgets/avatar.dart';
 import '../widgets/comum.dart';
 import 'perfil.dart';
 
@@ -57,7 +59,7 @@ class _HomePageState extends State<HomePage> {
   Widget _trilha() {
     // Redesenha a trilha sempre que o progresso muda
     return ListenableBuilder(
-      listenable: progresso,
+      listenable: Listenable.merge([progresso, PerfilAluna.instancia]),
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
@@ -76,6 +78,8 @@ class _HomePageState extends State<HomePage> {
                         fontSize: 16,
                       ),
                     ),
+                    const SizedBox(width: 14),
+                    SaldoDeGemas(gemas: PerfilAluna.instancia.gemas),
                   ],
                 ),
               ),

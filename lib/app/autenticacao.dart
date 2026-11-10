@@ -69,6 +69,18 @@ class Autenticacao {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
+  // Troca o nome que aparece no perfil.
+  Future<void> mudarNome(String nome) async {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return;
+    await usuario.updateDisplayName(nome.trim());
+    await usuario.reload();
+  }
+
+  // true se a aluna entrou com e-mail e senha (e não só com o Google).
+  bool get temSenha =>
+      usuario?.providerData.any((p) => p.providerId == 'password') ?? false;
+
   Future<void> sair() async {
     await _auth.signOut();
   }

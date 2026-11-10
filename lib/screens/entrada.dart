@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../app/autenticacao.dart';
 import '../app/pallet.dart';
+import '../app/perfil_aluna.dart';
 import '../app/progresso.dart';
 import 'home_page.dart';
 import 'login.dart';
@@ -41,7 +42,10 @@ class _Logada extends StatefulWidget {
 }
 
 class _LogadaState extends State<_Logada> {
-  late final Future<void> _carregando = Progresso.instancia.carregar();
+  late final Future<void> _carregando = Future.wait([
+    Progresso.instancia.carregar(),
+    PerfilAluna.instancia.carregar(),
+  ]);
 
   @override
   Widget build(BuildContext context) {
