@@ -9,20 +9,37 @@ import 'package:firebase_auth/firebase_auth.dart';
 //     erros:     quantos erros a aluna cometeu
 //     data:      data/hora no aparelho da aluna (texto ISO 8601)
 //     criadoEm:  data/hora do servidor do Firebase
+//
+//   alunas/{uid}  (documento do perfil)
+//     avatar, roupa, acessorio: o que a aluna está usando
+//     compradas:   lista das roupinhas compradas na loja
+//     gemasGastas: total de gemas já gastas na loja
+//     som:         efeitos sonoros ligados?
 class DatabaseHelper {
   static final DatabaseHelper instancia = DatabaseHelper._();
 
   DatabaseHelper._();
 
-  CollectionReference<Map<String, dynamic>> get _tentativas {
+  DocumentReference<Map<String, dynamic>> get _perfil {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       throw StateError('Nenhuma aluna logada no Firebase.');
     }
-    return FirebaseFirestore.instance
-        .collection('alunas')
-        .doc(uid)
-        .collection('tentativas');
+    return FirebaseFirestore.instance.collection('alunas').doc(uid);
+  }
+
+  CollectionReference<Map<String, dynamic>> get _tentativas =>
+      _perfil.collection('tentativas');
+
+  // Lê o perfil (avatar, roupinhas, gemas gastas). null se ainda não existe.
+  Future<Map<String, dynamic>?> buscarPerfil() async {
+    final doc = await _perfil.get();
+    return doc.data();
+  }
+
+  // Grava o perfil inteiro de uma vez.
+  Future<void> salvarPerfil(Map<String, dynamic> dados) async {
+    await _perfil.set(dados);
   }
 
   // Salva uma tentativa assim que a lição é concluída.

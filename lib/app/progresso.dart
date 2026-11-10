@@ -12,6 +12,16 @@ class Progresso extends ChangeNotifier {
 
   final Set<String> _diasEstudados = {};
 
+  // Gemas ganhas fazendo lições (as gastas na loja ficam em PerfilAluna).
+  int _gemasGanhas = 0;
+
+  int get gemasGanhas => _gemasGanhas;
+
+  // Cada lição concluída vale 5 gemas por estrela,
+  // e a primeira vez que a aluna conclui uma lição vale 10 gemas a mais.
+  static int gemasPor(int estrelas, {required bool primeiraVez}) =>
+      estrelas * 5 + (primeiraVez ? 10 : 0);
+
   bool _carregado = false;
 
   bool get carregado => _carregado;
@@ -33,6 +43,7 @@ class Progresso extends ChangeNotifier {
   void limpar() {
     _estrelas.clear();
     _diasEstudados.clear();
+    _gemasGanhas = 0;
     _carregado = false;
     notifyListeners();
   }
@@ -54,6 +65,7 @@ class Progresso extends ChangeNotifier {
 
     _estrelas.clear();
     _diasEstudados.clear();
+    _gemasGanhas = 0;
 
     for (final tentativa in tentativas) {
       final numero = tentativa['lesson_id'] as int;
@@ -72,6 +84,8 @@ class Progresso extends ChangeNotifier {
       final estrelas = erros == 0
           ? 3
           : (erros <= 2 ? 2 : 1);
+
+      _gemasGanhas += gemasPor(estrelas, primeiraVez: !_estrelas.containsKey(numero));
 
       // Guarda somente a melhor pontuação da lição.
       if (estrelas > (_estrelas[numero] ?? 0)) {
@@ -118,7 +132,11 @@ int get diasSeguidos {
 }
 
   // Atualiza o progresso em memória após concluir uma lição.
-  void concluir(int numero, int estrelas) {
+  // Devolve quantas gemas a aluna ganhou nesta tentativa.
+  int concluir(int numero, int estrelas) {
+  final gemas = gemasPor(estrelas, primeiraVez: !concluida(numero));
+  _gemasGanhas += gemas;
+
   if (estrelas > estrelasDa(numero)) {
     _estrelas[numero] = estrelas;
   }
@@ -134,5 +152,6 @@ int get diasSeguidos {
   );
 
   notifyListeners();
+  return gemas;
 }
 }
