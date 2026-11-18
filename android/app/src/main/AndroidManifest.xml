@@ -2,7 +2,7 @@
     <!-- Necessário para o Firebase funcionar também no APK de release. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="flutter_application_1"
+        android:label="Sororidade em Jogo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,11 +1,11 @@
 {
-    "name": "flutter_application_1",
-    "short_name": "flutter_application_1",
+    "name": "Sororidade em Jogo",
+    "short_name": "Sororidade em Jogo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F4EFDE",
+    "theme_color": "#D1398C",
+    "description": "Aprenda sobre sororidade, empatia e respeito.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
