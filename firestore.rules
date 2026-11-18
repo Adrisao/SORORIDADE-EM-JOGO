@@ -9,7 +9,10 @@ service cloud.firestore {
     match /alunas/{uid}/tentativas/{tentativa} {
       allow read: if request.auth != null && request.auth.uid == uid;
 
-      // Só pode criar (nunca editar ou apagar) e com os campos certos.
+      // Apagar só ao excluir a conta (a própria aluna).
+      allow delete: if request.auth != null && request.auth.uid == uid;
+
+      // Só pode criar (nunca editar) e com os campos certos.
       allow create: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['lesson_id', 'erros', 'data', 'criadoEm'])
@@ -27,6 +30,9 @@ service cloud.firestore {
     // Perfil da aluna: avatar, roupinhas compradas, gemas gastas e configurações.
     match /alunas/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Apagar só ao excluir a conta (a própria aluna).
+      allow delete: if request.auth != null && request.auth.uid == uid;
 
       allow create, update: if request.auth != null
         && request.auth.uid == uid

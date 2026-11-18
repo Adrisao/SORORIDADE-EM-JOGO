@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+import '../database/database_helper.dart';
 import '../firebase_options.dart';
 
 // Login da aluna pelo Firebase Authentication:
@@ -81,6 +82,34 @@ class Autenticacao {
   bool get temSenha =>
       usuario?.providerData.any((p) => p.providerId == 'password') ?? false;
 
+  // Por segurança, o Firebase só deixa excluir a conta se a aluna
+  // acabou de confirmar quem é: com a senha, ou entrando de novo no Google.
+  Future<void> confirmarIdentidade({String? senha}) async {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return;
+    if (senha != null) {
+      await usuario.reauthenticateWithCredential(
+        EmailAuthProvider.credential(email: usuario.email ?? '', password: senha),
+      );
+      return;
+    }
+    final google = GoogleAuthProvider();
+    if (kIsWeb) {
+      await usuario.reauthenticateWithPopup(google);
+    } else {
+      await usuario.reauthenticateWithProvider(google);
+    }
+  }
+
+  // Apaga o progresso, o perfil e a conta. Não tem volta.
+  // Chame confirmarIdentidade() antes.
+  Future<void> excluirConta() async {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return;
+    await DatabaseHelper.instancia.apagarTudo();
+    await usuario.delete();
+  }
+
   Future<void> sair() async {
     await _auth.signOut();
   }
@@ -95,6 +124,10 @@ class Autenticacao {
         return 'Esse e-mail não parece válido.';
       case 'user-disabled':
         return 'Esta conta foi desativada.';
+      case 'requires-recent-login':
+        return 'Por segurança, entre de novo e tente outra vez.';
+      case 'user-mismatch':
+        return 'Escolha a mesma conta Google que você usa no app.';
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':

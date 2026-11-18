@@ -59,6 +59,21 @@ class DatabaseHelper {
     });
   }
 
+  // Apaga tudo da aluna (tentativas e perfil). Usado ao excluir a conta.
+  Future<void> apagarTudo() async {
+    final tentativas = await _tentativas.get();
+    // Um lote do Firestore aceita até 500 operações.
+    final docs = tentativas.docs;
+    for (var i = 0; i < docs.length; i += 400) {
+      final lote = FirebaseFirestore.instance.batch();
+      for (final doc in docs.skip(i).take(400)) {
+        lote.delete(doc.reference);
+      }
+      await lote.commit();
+    }
+    await _perfil.delete();
+  }
+
   // Recupera todas as tentativas da aluna, da mais antiga para a mais nova.
   Future<List<Map<String, dynamic>>> buscarTentativas() async {
     final resultado = await _tentativas.orderBy('data').get();

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/autenticacao.dart';
 import '../app/pallet.dart';
 import '../app/perfil_aluna.dart';
+import '../app/progresso.dart';
 
 class Configuracoes extends StatelessWidget {
   const Configuracoes({super.key});
@@ -25,6 +26,77 @@ class Configuracoes extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(backgroundColor: cor, content: Text(texto)));
+  }
+
+  // Excluir a conta: avisa, confirma a identidade e apaga tudo.
+  Future<void> _excluirConta(BuildContext context) async {
+    final auth = Autenticacao.instancia;
+
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir sua conta?'),
+        content: const Text(
+          'Isso apaga para sempre o seu progresso, estrelas, gemas, XP, '
+          'roupinhas e conquistas. Não dá para desfazer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Pallet.vermelhoCoral),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmou != true || !context.mounted) return;
+
+    // Quem tem senha digita a senha; quem entrou com Google escolhe a conta de novo.
+    String? senha;
+    if (auth.temSenha) {
+      senha = await showDialog<String>(
+        context: context,
+        builder: (context) => const _PedirSenha(),
+      );
+      if (senha == null || !context.mounted) return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Pallet.rosaMagenta),
+      ),
+    );
+
+    try {
+      await auth.confirmarIdentidade(senha: senha);
+      await auth.excluirConta();
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // fecha o carregando
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          backgroundColor: Pallet.rosaMagenta,
+          content: Text(Autenticacao.mensagemDeErro(e)),
+        ));
+      return;
+    }
+
+    Progresso.instancia.limpar();
+    PerfilAluna.instancia.limpar();
+    if (!context.mounted) return;
+    // Volta para o começo; como a conta não existe mais, abre o login.
+    Navigator.of(context).popUntil((rota) => rota.isFirst);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      backgroundColor: Pallet.roxoAmeixa,
+      content: Text('Sua conta foi excluída.'),
+    ));
   }
 
   @override
@@ -81,6 +153,22 @@ class Configuracoes extends StatelessWidget {
                         onTap: () => _trocarSenha(context),
                       ),
                     ],
+                    const Divider(height: 1, color: Pallet.lavanda),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.delete_forever_rounded,
+                        color: Pallet.vermelhoCoral,
+                      ),
+                      title: const Text(
+                        'Excluir conta',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Pallet.vermelhoCoral,
+                        ),
+                      ),
+                      subtitle: const Text('Apaga a conta e todo o progresso'),
+                      onTap: () => _excluirConta(context),
+                    ),
                   ],
                 ),
               ),
@@ -102,6 +190,54 @@ class Configuracoes extends StatelessWidget {
           color: Pallet.roxoAmeixa,
         ),
       ),
+    );
+  }
+}
+
+// Pede a senha para confirmar a exclusão da conta.
+class _PedirSenha extends StatefulWidget {
+  const _PedirSenha();
+
+  @override
+  State<_PedirSenha> createState() => _PedirSenhaState();
+}
+
+class _PedirSenhaState extends State<_PedirSenha> {
+  final _senha = TextEditingController();
+
+  @override
+  void dispose() {
+    _senha.dispose();
+    super.dispose();
+  }
+
+  void _confirmar() {
+    if (_senha.text.isEmpty) return;
+    Navigator.pop(context, _senha.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Confirme sua senha'),
+      content: TextField(
+        controller: _senha,
+        obscureText: true,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: 'Senha'),
+        onSubmitted: (_) => _confirmar(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(foregroundColor: Pallet.vermelhoCoral),
+          onPressed: _confirmar,
+          child: const Text('Excluir conta'),
+        ),
+      ],
     );
   }
 }

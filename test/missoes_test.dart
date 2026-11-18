@@ -5,6 +5,7 @@ import 'package:flutter_application_1/app/perfil_aluna.dart';
 import 'package:flutter_application_1/app/progresso.dart';
 import 'package:flutter_application_1/data/missoes.dart';
 import 'package:flutter_application_1/screens/missoes.dart';
+import 'package:flutter_application_1/screens/perfil.dart';
 
 void main() {
   final progresso = Progresso.instancia;
@@ -70,5 +71,16 @@ void main() {
     await tester.pump();
     expect(find.text('Feito!'), findsOneWidget);
     expect(perfil.xp, greaterThan(0));
+  });
+
+  testWidgets('perfil mostra o nível e o XP', (tester) async {
+    tester.view.physicalSize = const Size(1080, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    perfil.resgatarMissao('tres_licoes', diaria: false, gemas: 30, xp: 130);
+    await tester.pumpWidget(const MaterialApp(home: Perfil()));
+    expect(find.text('Nível 2  ·  130 XP'), findsOneWidget);
+    expect(find.text('70 XP para o nível 3'), findsOneWidget);
   });
 }

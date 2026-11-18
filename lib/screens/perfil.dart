@@ -179,6 +179,8 @@ class Perfil extends StatelessWidget {
             },
           ),
           const SizedBox(height: 14),
+          _nivel(PerfilAluna.instancia),
+          const SizedBox(height: 16),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 10,
@@ -197,6 +199,66 @@ class Perfil extends StatelessWidget {
                 label: const Text('Loja'),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Nível e barra de XP (o XP vem das missões)
+  Widget _nivel(PerfilAluna perfil) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Pallet.dourado,
+              shape: BoxShape.circle,
+              border: Border.all(color: Pallet.amareloSol, width: 3),
+            ),
+            child: Text(
+              '${perfil.nivel}',
+              style: const TextStyle(
+                color: Pallet.branco,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nível ${perfil.nivel}  ·  ${perfil.xp} XP',
+                  style: const TextStyle(
+                    color: Pallet.branco,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: perfil.xpNoNivel / PerfilAluna.xpPorNivel,
+                    minHeight: 8,
+                    backgroundColor: Pallet.roxoLogo,
+                    color: Pallet.amareloSol,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${PerfilAluna.xpPorNivel - perfil.xpNoNivel} XP para o nível ${perfil.nivel + 1}',
+                  style: const TextStyle(color: Pallet.lavanda, fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ],
       ),
