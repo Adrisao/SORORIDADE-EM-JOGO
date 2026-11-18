@@ -31,7 +31,8 @@ service cloud.firestore {
       allow create, update: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(
-             ['avatar', 'roupa', 'acessorio', 'compradas', 'gemasGastas', 'som'])
+             ['avatar', 'roupa', 'acessorio', 'compradas', 'gemasGastas', 'som',
+              'xp', 'gemasMissoes', 'missoesResgatadas', 'diaDasDiarias', 'diariasResgatadas'])
         && request.resource.data.avatar is string
         && request.resource.data.avatar.size() <= 40
         && request.resource.data.roupa is string
@@ -45,7 +46,25 @@ service cloud.firestore {
         && request.resource.data.gemasGastas >= 0
         // Gemas gastas nunca diminuem (não dá para "devolver" e ganhar de novo).
         && (resource == null || request.resource.data.gemasGastas >= resource.data.gemasGastas)
-        && request.resource.data.som is bool;
+        && request.resource.data.som is bool
+        // Missões: XP e gemas das missões só aumentam, e no máximo 300 por vez
+        // (a maior recompensa é 200 XP), para não dar para inventar pontos.
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= 0
+        && request.resource.data.gemasMissoes is int
+        && request.resource.data.gemasMissoes >= 0
+        && (resource == null
+            ? (request.resource.data.xp <= 300 && request.resource.data.gemasMissoes <= 300)
+            : (request.resource.data.xp >= resource.data.get('xp', 0)
+               && request.resource.data.xp <= resource.data.get('xp', 0) + 300
+               && request.resource.data.gemasMissoes >= resource.data.get('gemasMissoes', 0)
+               && request.resource.data.gemasMissoes <= resource.data.get('gemasMissoes', 0) + 300))
+        && request.resource.data.missoesResgatadas is list
+        && request.resource.data.missoesResgatadas.size() <= 50
+        && request.resource.data.diaDasDiarias is string
+        && request.resource.data.diaDasDiarias.size() <= 10
+        && request.resource.data.diariasResgatadas is list
+        && request.resource.data.diariasResgatadas.size() <= 20;
     }
 
     // Qualquer outro caminho fica bloqueado.

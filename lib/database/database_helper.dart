@@ -15,6 +15,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 //     compradas:   lista das roupinhas compradas na loja
 //     gemasGastas: total de gemas já gastas na loja
 //     som:         efeitos sonoros ligados?
+//     xp, gemasMissoes:  XP e gemas ganhos resgatando missões
+//     missoesResgatadas: missões especiais já resgatadas
+//     diaDasDiarias, diariasResgatadas: missões diárias resgatadas naquele dia
 class DatabaseHelper {
   static final DatabaseHelper instancia = DatabaseHelper._();
 
