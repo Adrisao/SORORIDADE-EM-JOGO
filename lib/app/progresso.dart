@@ -12,6 +12,10 @@ class Progresso extends ChangeNotifier {
 
   final Set<String> _diasEstudados = {};
 
+  // Estrelas de cada lição feita, separadas por dia ('2026-11-18' -> [3, 1]).
+  // Usado pelas missões diárias.
+  final Map<String, List<int>> _estrelasPorDia = {};
+
   // Gemas ganhas fazendo lições (as gastas na loja ficam em PerfilAluna).
   int _gemasGanhas = 0;
 
@@ -43,6 +47,7 @@ class Progresso extends ChangeNotifier {
   void limpar() {
     _estrelas.clear();
     _diasEstudados.clear();
+    _estrelasPorDia.clear();
     _gemasGanhas = 0;
     _carregado = false;
     notifyListeners();
@@ -65,6 +70,7 @@ class Progresso extends ChangeNotifier {
 
     _estrelas.clear();
     _diasEstudados.clear();
+    _estrelasPorDia.clear();
     _gemasGanhas = 0;
 
     for (final tentativa in tentativas) {
@@ -73,17 +79,12 @@ class Progresso extends ChangeNotifier {
 
       final data = DateTime.parse(tentativa['data'] as String);
 
-      final dia = DateTime(data.year, data.month, data.day);
-
-      _diasEstudados.add(
-        '${dia.year.toString().padLeft(4, '0')}-'
-        '${dia.month.toString().padLeft(2, '0')}-'
-        '${dia.day.toString().padLeft(2, '0')}',
-      );
 
       final estrelas = erros == 0
           ? 3
           : (erros <= 2 ? 2 : 1);
+
+      _registrarDia(data, estrelas);
 
       _gemasGanhas += gemasPor(estrelas, primeiraVez: !_estrelas.containsKey(numero));
 
@@ -96,6 +97,25 @@ class Progresso extends ChangeNotifier {
     _carregado = true;
     notifyListeners();
   }
+
+  // '2026-11-18'
+  static String chaveDoDia(DateTime data) =>
+      '${data.year.toString().padLeft(4, '0')}-'
+      '${data.month.toString().padLeft(2, '0')}-'
+      '${data.day.toString().padLeft(2, '0')}';
+
+  void _registrarDia(DateTime data, int estrelas) {
+    final chave = chaveDoDia(data);
+    _diasEstudados.add(chave);
+    _estrelasPorDia.putIfAbsent(chave, () => []).add(estrelas);
+  }
+
+  // Lições feitas hoje (contando repetições).
+  int get licoesHoje => _estrelasPorDia[chaveDoDia(DateTime.now())]?.length ?? 0;
+
+  // Lições feitas hoje sem nenhum erro (3 estrelas).
+  int get licoesPerfeitasHoje =>
+      _estrelasPorDia[chaveDoDia(DateTime.now())]?.where((e) => e == 3).length ?? 0;
 
 int get diasSeguidos {
   if (_diasEstudados.isEmpty) return 0;
@@ -141,15 +161,7 @@ int get diasSeguidos {
     _estrelas[numero] = estrelas;
   }
 
-  final hoje = DateTime.now();
-
-  final dia = DateTime(hoje.year, hoje.month, hoje.day);
-
-  _diasEstudados.add(
-    '${dia.year.toString().padLeft(4, '0')}-'
-    '${dia.month.toString().padLeft(2, '0')}-'
-    '${dia.day.toString().padLeft(2, '0')}',
-  );
+  _registrarDia(DateTime.now(), estrelas);
 
   notifyListeners();
   return gemas;

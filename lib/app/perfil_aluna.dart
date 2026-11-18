@@ -8,7 +8,8 @@ import 'autenticacao.dart';
 import 'progresso.dart';
 
 // Escolhas da aluna que ficam salvas no Firebase:
-// avatar, roupinhas compradas e vestidas, gemas gastas e configurações.
+// avatar, roupinhas compradas e vestidas, gemas gastas, configurações,
+// XP e missões resgatadas.
 class PerfilAluna extends ChangeNotifier {
   PerfilAluna._();
 
@@ -21,14 +22,60 @@ class PerfilAluna extends ChangeNotifier {
   int _gemasGastas = 0;
   bool _som = true;
 
+  // Missões: XP e gemas ganhos resgatando missões.
+  int _xp = 0;
+  int _gemasMissoes = 0;
+  // Missões especiais (só podem ser resgatadas uma vez).
+  final Set<String> _missoesResgatadas = {};
+  // Missões diárias resgatadas no dia _diaDasDiarias ('2026-11-18').
+  final Set<String> _diariasResgatadas = {};
+  String _diaDasDiarias = '';
+
+  static const int xpPorNivel = 100;
+
   String get avatar => _avatar;
   String get roupa => _roupa;
   String? get acessorio => _acessorio;
   bool get som => _som;
   int get gemasGastas => _gemasGastas;
 
-  // Saldo = gemas ganhas nas lições - gemas gastas na loja.
-  int get gemas => max(0, Progresso.instancia.gemasGanhas - _gemasGastas);
+  int get xp => _xp;
+  int get nivel => 1 + _xp ~/ xpPorNivel;
+  int get xpNoNivel => _xp % xpPorNivel;
+
+  // Saldo = gemas ganhas nas lições e missões - gemas gastas na loja.
+  int get gemas =>
+      max(0, Progresso.instancia.gemasGanhas + _gemasMissoes - _gemasGastas);
+
+  bool resgatou(String missao, {required bool diaria}) => diaria
+      ? _diaDasDiarias == Progresso.chaveDoDia(DateTime.now()) &&
+          _diariasResgatadas.contains(missao)
+      : _missoesResgatadas.contains(missao);
+
+  // Entrega as gemas e o XP de uma missão concluída.
+  // Devolve false se ela já tinha sido resgatada.
+  bool resgatarMissao(
+    String missao, {
+    required bool diaria,
+    required int gemas,
+    required int xp,
+  }) {
+    if (resgatou(missao, diaria: diaria)) return false;
+    if (diaria) {
+      final hoje = Progresso.chaveDoDia(DateTime.now());
+      if (_diaDasDiarias != hoje) {
+        _diaDasDiarias = hoje;
+        _diariasResgatadas.clear();
+      }
+      _diariasResgatadas.add(missao);
+    } else {
+      _missoesResgatadas.add(missao);
+    }
+    _gemasMissoes += gemas;
+    _xp += xp;
+    _alterou();
+    return true;
+  }
 
   bool comprou(String id) => _compradas.contains(id);
 
@@ -46,6 +93,11 @@ class PerfilAluna extends ChangeNotifier {
       ..add(roupaInicial);
     _gemasGastas = 0;
     _som = true;
+    _xp = 0;
+    _gemasMissoes = 0;
+    _missoesResgatadas.clear();
+    _diariasResgatadas.clear();
+    _diaDasDiarias = '';
     notifyListeners();
   }
 
@@ -78,6 +130,14 @@ class PerfilAluna extends ChangeNotifier {
 
     _gemasGastas = (dados['gemasGastas'] as num?)?.toInt() ?? 0;
     _som = dados['som'] as bool? ?? true;
+
+    _xp = (dados['xp'] as num?)?.toInt() ?? 0;
+    _gemasMissoes = (dados['gemasMissoes'] as num?)?.toInt() ?? 0;
+    _missoesResgatadas.addAll(
+        (dados['missoesResgatadas'] as List?)?.whereType<String>() ?? []);
+    _diaDasDiarias = dados['diaDasDiarias'] as String? ?? '';
+    _diariasResgatadas.addAll(
+        (dados['diariasResgatadas'] as List?)?.whereType<String>() ?? []);
     notifyListeners();
   }
 
@@ -124,6 +184,11 @@ class PerfilAluna extends ChangeNotifier {
       'compradas': _compradas.toList(),
       'gemasGastas': _gemasGastas,
       'som': _som,
+      'xp': _xp,
+      'gemasMissoes': _gemasMissoes,
+      'missoesResgatadas': _missoesResgatadas.toList(),
+      'diaDasDiarias': _diaDasDiarias,
+      'diariasResgatadas': _diariasResgatadas.toList(),
     }).catchError((Object e) {
       debugPrint('Não foi possível salvar o perfil no Firebase: $e');
     });
